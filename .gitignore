@@ -1,0 +1,4 @@
+*.pyc
+secrets.py
+teachable_cache.ousecrets.py
+teachable_cache.out
