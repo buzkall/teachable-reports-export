@@ -22,7 +22,7 @@ URL_FIND_USER = site_url+'/api/v1/users?name_or_email_cont='
 URL_REPORT_CARD = site_url+'/api/v1/users/USER_ID/report_card'
 URL_CURRICULUM = site_url+'/api/v1/courses/COURSE_ID/curriculum'
 #CACHE_PATH = '/tmp/teachable_cache.out'
-CACHE_PATH = './teachable_cache.out'
+CACHE_PATH = dir_path + '/teachable_cache.out'
 
 #####
 
