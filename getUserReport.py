@@ -51,8 +51,6 @@ def find(lst, key, value):
             return i
     return -1
 
-#def check_credentials():
-#    if 
 
 def get_course_list():
     global course_list
@@ -110,8 +108,21 @@ def get_course_curriculum():
         print 'Curriculum was not previously in cache'
 
 
+def get_lecture_title():
+    global course_curriculum
+
+    if course.get('completed_lecture_ids'):
+        course_curriculum = curriculum.get(course_id)
+        sections = course_curriculum.get('lecture_sections')
+        for section in sections:
+            lecture_id = find(section.get('lectures'), 'id', course.get('completed_lecture_ids')[-1])
+            if lecture_id >= 0:
+                return section.get('lectures')[lecture_id].get('name')
+    return ''
+
+
 def get_section_title():
-    global course_curriculum, output
+    global course_curriculum
 
     if course.get('completed_lecture_ids'):
         course_curriculum = curriculum.get(course_id)
@@ -138,11 +149,13 @@ for key, course in user_report_card.iteritems():
 
     get_course_curriculum()
     course_data = find(course_list, 'id', int(course_id))
+    current_lecture_title = get_lecture_title()
     current_section_title = get_section_title()
 
     output.append({'course_id': course_id,
                    'course_name': course_list[course_data].get('name'),
                    'course_percentage': course.get('percent_complete'),
+                   'course_current_lecture': current_lecture_title,
                    'course_current_section': current_section_title})
 
 user_ordered_list = sorted(output, key=itemgetter('course_percentage'), reverse=True)
@@ -153,9 +166,10 @@ if output_file:
 
 print '###### Report of ' + user_name.encode('utf-8') + ' (' + user_mail.encode('utf-8') + ') #########'
 for item in user_ordered_list:
-    print item.get('course_name').encode('utf-8') + ' - ' + \
+    print 'Curso: ' + item.get('course_name').encode('utf-8') + ' - ' + \
           str(item.get('course_percentage')).encode('utf-8') + '%' + ' - ' + \
-          item.get('course_current_section').encode('utf-8')
+          'Sección: ' + item.get('course_current_section').encode('utf-8') + ' - ' + \
+          'Lectura: ' + item.get('course_current_lecture').encode('utf-8')
 print '###### end Report of ' + user_name.encode('utf-8') + ' (' + user_mail.encode('utf-8') + ') #########'
 
 if output_file:
