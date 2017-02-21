@@ -51,13 +51,21 @@ def find(lst, key, value):
             return i
     return -1
 
+#def check_credentials():
+#    if 
 
 def get_course_list():
     global course_list
     if 'courses' in cached:
         course_list = cached['courses']
     else:
-        course_list = s.get(URL_COURSES).json().get('courses')
+        course_info = s.get(URL_COURSES).json()
+        if course_info.get('error'):
+            print 'Check Teachable credentials'
+            sys.exit(1)
+        else:
+            course_list = course_info.get('courses')
+
         cached['courses'] = course_list
         print 'Courses were not previously in cache'
 
@@ -65,6 +73,10 @@ def get_course_list():
 def get_user_report_card():
     global user_report_card, user_name
     users = s.get(URL_FIND_USER + user_mail).json()
+    if users.get('error'):
+        print 'Check Teachable credentials'
+        sys.exit(1)
+
     if not users.get('users'):
         print 'There is no user with that email'
         sys.exit(1)
