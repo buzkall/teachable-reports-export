@@ -6,8 +6,8 @@ import sys
 import shelve
 import os.path
 
-
-SECRETS_PATH = 'secrets.py'
+dir_path = os.path.dirname(os.path.realpath(__file__))
+SECRETS_PATH = dir_path + '/secrets.py'
 if os.path.exists(SECRETS_PATH):
     from secrets import username, password, site_url
 else:

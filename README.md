@@ -9,9 +9,9 @@ The website is done using Angular, and it calls to some api urls to load the con
 It's done using python 2.7  
 You should rename the file called secrets_example.py to secrets.py and set your username, password and teachable custom domain
 
-    username='YOUR_TEACHABLE_USERNAME'¬
-    password='YOUR_TEACHABLE_PASSWORD'¬
-    site_url='http://YOUR_TEACHABLE_URL'¬
+    username='YOUR_TEACHABLE_USERNAME'
+    password='YOUR_TEACHABLE_PASSWORD'
+    site_url='http://YOUR_TEACHABLE_URL'
 
 
 ### Usage
