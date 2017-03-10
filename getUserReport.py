@@ -16,7 +16,6 @@ else:
 
 
 #### teachable urls
-
 URL_COURSES = site_url+'/api/v1/courses'
 URL_FIND_USER = site_url+'/api/v1/users?name_or_email_cont='
 URL_REPORT_CARD = site_url+'/api/v1/users/USER_ID/report_card'
@@ -28,7 +27,7 @@ CACHE_PATH = dir_path + '/teachable_cache.out'
 
 course_list = {}
 user_report_card = {}
-curriculum = []
+curriculum = {}
 course_curriculum = {}
 output = []
 user_name = ''
@@ -93,46 +92,49 @@ def get_course_curriculum():
     if 'curriculum' in cached:
         curriculum = cached['curriculum']
         if course_id in curriculum:
-            course_curriculum = curriculum[course_id]
+            course_curriculum = curriculum.get('course_id')
+
         else:
-            url_course_curriculum = URL_CURRICULUM.replace('COURSE_ID', course_id)
-            course_curriculum = s.get(url_course_curriculum).json()
-            curriculum.update({course_id: course_curriculum})
-            cached['curriculum'] = curriculum
+            get_new_course_curriculum()
             print 'Curriculum of this course was not previously in cache'
     else:
-        url_course_curriculum = URL_CURRICULUM.replace('COURSE_ID', course_id)
-        course_curriculum = s.get(url_course_curriculum).json()
-        curriculum = {course_id: course_curriculum}
-        cached['curriculum'] = curriculum
+        get_new_course_curriculum()
         print 'Curriculum was not previously in cache'
 
 
-def get_lecture_title():
+def get_new_course_curriculum():
+    global curriculum, course_curriculum
+
+    url_course_curriculum = URL_CURRICULUM.replace('COURSE_ID', course_id)
+    course_curriculum = s.get(url_course_curriculum).json()
+    curriculum.update({course_id: course_curriculum})
+    cached['curriculum'] = curriculum
+
+
+def get_latest_viewed_title():
     global course_curriculum
+    ordered_id_list = []
+    lecture_name = ''
+    section_name = ''
 
     if course.get('completed_lecture_ids'):
         course_curriculum = curriculum.get(course_id)
         sections = course_curriculum.get('lecture_sections')
+
         for section in sections:
-            lecture_id = find(section.get('lectures'), 'id', course.get('completed_lecture_ids')[-1])
-            if lecture_id >= 0:
-                return section.get('lectures')[lecture_id].get('name')
-    return ''
+            for lecture in section.get('lectures'):
+                ordered_id_list.append(lecture.get('id'))
 
+        completed_lectures = course.get('completed_lecture_ids')
+        ordered_completed_lectures = sorted(completed_lectures, key=ordered_id_list.index)
 
-def get_section_title():
-    global course_curriculum
-
-    if course.get('completed_lecture_ids'):
-        course_curriculum = curriculum.get(course_id)
-        sections = course_curriculum.get('lecture_sections')
         for section in sections:
-            lecture_id = find(section.get('lectures'), 'id', course.get('completed_lecture_ids')[-1])
+            lecture_id = find(section.get('lectures'), 'id', ordered_completed_lectures[-1])
             if lecture_id >= 0:
-                return section.get('name')
-    return ''
-
+                    lecture_name = section.get('lectures')[lecture_id].get('name')
+                    section_name = section.get('name')
+        return lecture_name, section_name
+    return '', ''
 
 cached = shelve.open(CACHE_PATH)
 
@@ -149,8 +151,7 @@ for key, course in user_report_card.iteritems():
 
     get_course_curriculum()
     course_data = find(course_list, 'id', int(course_id))
-    current_lecture_title = get_lecture_title()
-    current_section_title = get_section_title()
+    current_lecture_title, current_section_title = get_latest_viewed_title()
 
     output.append({'course_id': course_id,
                    'course_name': course_list[course_data].get('name'),

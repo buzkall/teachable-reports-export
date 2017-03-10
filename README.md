@@ -1,13 +1,13 @@
 # Teachable Reports export
-Export your Teachable students' report using the unofficial Teachable API
+Export the report of your Teachable students using the unofficial Teachable API
 
 Teachable.com doesn't have an official API to export your students data.   
 It has some webhooks to trigger events and use them with services like Zapier, but there is no solution to get one of your studens report.  
 The website is done using Angular, and it calls to some api urls to load the content, so I've created a script to get the data of all the courses a student is enrolled.
 
 ### Config
-It's done using python 2.7  
-You should rename the file called secrets_example.py to secrets.py and set your username, password and teachable custom domain
+This script has been tested with python 2.7
+You should copy the file called secrets_example.py, rename it as secrets.py and set your username, password and yout teachable custom domain
 
     username='YOUR_TEACHABLE_USERNAME'
     password='YOUR_TEACHABLE_PASSWORD'
@@ -16,7 +16,8 @@ You should rename the file called secrets_example.py to secrets.py and set your 
 
 ### Usage
 It should receive at least one parameter: the student's email  
-The second parameter it's optional, and it's a filename in which the output data will be saved, if set
+The second parameter it's optional, and it's a filename in which the output data will be saved (if set, otherwise,
+output will be echoed in terminal)
 
     python getUserReport.py STUDENT_EMAIL
 
@@ -28,7 +29,7 @@ It will output something like this
     COURSE3 NAME - 0% -
     ###### end Report of STUDENT NAME (STUDENT EMAIL) #########
 
-Specifing the output file won't output anything to the screen and will save it into a file:
+Specifying the output file won't output anything to the screen and will save it into a file:
 
     python getUserReport.py STUDENT_EMAIL FILENAME.txt
 
