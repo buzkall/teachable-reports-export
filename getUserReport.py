@@ -5,6 +5,7 @@ import requests
 import sys
 import shelve
 import os.path
+import time
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 SECRETS_PATH = dir_path + '/secrets.py'
@@ -22,6 +23,7 @@ URL_REPORT_CARD = site_url+'/api/v1/users/USER_ID/report_card'
 URL_CURRICULUM = site_url+'/api/v1/courses/COURSE_ID/curriculum'
 #CACHE_PATH = '/tmp/teachable_cache.out'
 CACHE_PATH = dir_path + '/teachable_cache.out'
+MAXIMUM_CACHE_DURATION = 60 * 60 * 24 * 7 # One week
 
 #####
 
@@ -53,8 +55,9 @@ def find(lst, key, value):
 
 def get_course_list():
     global course_list
-    if 'courses' in cached:
-        course_list = cached['courses']
+
+    if 'courses' in cached_data:
+        course_list = cached_data['courses']
     else:
         course_info = s.get(URL_COURSES).json()
         if course_info.get('error'):
@@ -63,12 +66,13 @@ def get_course_list():
         else:
             course_list = course_info.get('courses')
 
-        cached['courses'] = course_list
+        cached_data['courses'] = course_list
         print 'Courses were not previously in cache'
 
 
 def get_user_report_card():
     global user_report_card, user_name
+
     users = s.get(URL_FIND_USER + user_mail).json()
     if users.get('error'):
         print 'Check Teachable credentials'
@@ -89,8 +93,8 @@ def get_course_curriculum():
 
     url_course_curriculum = URL_CURRICULUM.replace('COURSE_ID', course_id)
     course_curriculum = s.get(url_course_curriculum).json().get('lecture_sections')
-    if 'curriculum' in cached:
-        curriculum = cached['curriculum']
+    if 'curriculum' in cached_data:
+        curriculum = cached_data['curriculum']
         if course_id in curriculum:
             course_curriculum = curriculum.get('course_id')
 
@@ -108,14 +112,12 @@ def get_new_course_curriculum():
     url_course_curriculum = URL_CURRICULUM.replace('COURSE_ID', course_id)
     course_curriculum = s.get(url_course_curriculum).json()
     curriculum.update({course_id: course_curriculum})
-    cached['curriculum'] = curriculum
+    cached_data['curriculum'] = curriculum
 
 
 def get_latest_viewed_title():
     global course_curriculum
     ordered_id_list = []
-    lecture_name = ''
-    section_name = ''
 
     if course.get('completed_lecture_ids'):
         course_curriculum = curriculum.get(course_id)
@@ -133,10 +135,20 @@ def get_latest_viewed_title():
             if lecture_id >= 0:
                     lecture_name = section.get('lectures')[lecture_id].get('name')
                     section_name = section.get('name')
-        return lecture_name, section_name
+                    return lecture_name, section_name
     return '', ''
 
-cached = shelve.open(CACHE_PATH)
+
+def expire_cache():
+    if os.path.isfile(CACHE_PATH):
+        cache_antiquity = time.time() - os.path.getctime(CACHE_PATH)
+        if cache_antiquity > MAXIMUM_CACHE_DURATION:
+            os.remove(CACHE_PATH)
+            print('Cache file dumped!')
+
+
+expire_cache()
+cached_data = shelve.open(CACHE_PATH)
 
 s = requests.Session()
 # get username and password from the secrets.py file
@@ -176,4 +188,4 @@ print '###### end Report of ' + user_name.encode('utf-8') + ' (' + user_mail.enc
 if output_file:
     print ' '
     f.close()
-cached.close()
+cached_data.close()
