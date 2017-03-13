@@ -6,6 +6,7 @@ import sys
 import shelve
 import os.path
 import time
+import itertools
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 SECRETS_PATH = dir_path + '/secrets.py'
@@ -24,6 +25,7 @@ URL_COURSE_PRICE = site_url + '/api/v1/courses/COURSE_ID/products'
 # CACHE_PATH = '/tmp/teachable_cache.out'
 CACHE_PATH = dir_path + '/teachable_cache.out'
 MAXIMUM_CACHE_DURATION = 60 * 60 * 24 * 7  # One week
+HIDE_FREE_COURSES = 1  # set to 0 to show all
 #####
 
 course_list = {}
@@ -151,6 +153,15 @@ def expire_cache():
             print('Cache file dumped!')
 
 
+def generate_output():
+    get_course_curriculum()
+    course_data = find(course_list, 'id', int(course_id))
+    current_lecture_title, current_section_title = get_latest_viewed_title()
+    output.append({'course_id': course_id, 'course_name': course_list[course_data].get('name'),
+                   'course_percentage': course.get('percent_complete'), 'course_current_lecture': current_lecture_title,
+                   'course_current_section': current_section_title})
+
+
 cached_data = shelve.open(CACHE_PATH)
 
 s = requests.Session()
@@ -161,18 +172,15 @@ s.headers.update({'x-test': 'true'})
 get_course_list()
 get_user_report_card()
 
+
 for key, course in user_report_card.iteritems():
     course_id = str(course.get('course_id'))
 
-    if get_course_price() > 0:
-        get_course_curriculum()
-        course_data = find(course_list, 'id', int(course_id))
-        current_lecture_title, current_section_title = get_latest_viewed_title()
-
-        output.append({'course_id': course_id, 'course_name': course_list[course_data].get('name'),
-                       'course_percentage': course.get('percent_complete'),
-                       'course_current_lecture': current_lecture_title,
-                       'course_current_section': current_section_title})
+    if HIDE_FREE_COURSES:
+        if get_course_price() > 0:
+            generate_output()
+    else:
+        generate_output()
 
 user_ordered_list = sorted(output, key=itemgetter('course_percentage'), reverse=True)
 
@@ -182,15 +190,17 @@ if output_file:
 
 print '###### Report of ' + user_name.encode('utf-8') + ' (' + user_mail.encode('utf-8') + ') #########'
 
+counter = 1
 for item in user_ordered_list:
     if item.get('course_percentage') == 0:
-        print 'Curso: ' + item.get('course_name').encode('utf-8') + ' - ' + str(item.get('course_percentage')).encode(
+        print str(counter) + ' - Curso: ' + item.get('course_name').encode('utf-8') + ' - ' + str(item.get('course_percentage')).encode(
             'utf-8') + '%'
     else:
-        print 'Curso: ' + item.get('course_name').encode('utf-8') + ' - ' + \
+        print str(counter) + ' - Curso: ' + item.get('course_name').encode('utf-8') + ' - ' + \
               str(item.get('course_percentage')).encode('utf-8') + '%' + ' - ' + \
               'Sección: ' + item.get('course_current_section').encode('utf-8') + ' - ' + \
               'Lectura: ' + item.get('course_current_lecture').encode('utf-8')
+    counter=counter+1
 print '###### end Report of ' + user_name.encode('utf-8') + ' (' + user_mail.encode('utf-8') + ') #########'
 
 if output_file:
