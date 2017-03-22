@@ -36,14 +36,20 @@ user_name = ''
 
 parser = argparse.ArgumentParser(description='''Get your student status in Teachable. ''', epilog="""---""")
 parser.add_argument('--hidefree', type=int, default=1, help='show/hide free courses')
-parser.add_argument('email', nargs='*', default=[1, 2, 3], help='email')
+parser.add_argument('email', nargs=1, default='', help='email')
+parser.add_argument('output_file', nargs='?', default='', help='Output file')
 args = parser.parse_args()
 
-#print args
+@print args
 
 HIDE_FREE_COURSES = args.hidefree  # set to 0 to show all
 
+# process position variables
 output_file = ''
+if args.output_file:
+    output_file = args.output_file
+    print 'Output will be saved to ' + output_file
+
 user_mail = args.email[0]
 
 
