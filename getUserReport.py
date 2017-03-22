@@ -35,7 +35,7 @@ output = []
 user_name = ''
 
 parser = argparse.ArgumentParser(description='''Get your student status in Teachable. ''', epilog="""---""")
-parser.add_argument('--hidefree', type=int, default=1, help='1: show/0: hide free courses ')
+parser.add_argument('--hidefree', type=int, default=1, help='0: show/1: hide free courses ')
 parser.add_argument('email', type=str, nargs=1, default='', help='email')
 parser.add_argument('output_file', nargs='?', default='', help='Output file')
 
