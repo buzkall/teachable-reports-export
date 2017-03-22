@@ -40,7 +40,7 @@ parser.add_argument('email', nargs=1, default='', help='email')
 parser.add_argument('output_file', nargs='?', default='', help='Output file')
 args = parser.parse_args()
 
-@print args
+#print args
 
 HIDE_FREE_COURSES = args.hidefree  # set to 0 to show all
 
