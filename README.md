@@ -15,6 +15,23 @@ You should copy the file called secrets_example.py, rename it as secrets.py and 
 
 
 ### Usage
+
+Typing --help will show the parameters info
+
+    usage: getUserReport.py [-h] [--hidefree HIDEFREE] [-l LIST]
+                        email [output_file]
+
+    Get your student status in Teachable.
+
+    positional arguments:
+        email                 email
+        output_file           Output file
+
+    optional arguments:
+    -h, --help            show this help message and exit
+    --hidefree HIDEFREE   0: show/1: hide free courses
+    
+    
 It should receive at least one parameter: the student's email  
 The second parameter it's optional, and it's a filename in which the output data will be saved (if set, otherwise,
 output will be echoed in terminal)
@@ -32,6 +49,12 @@ It will output something like this
 Specifying the output file won't output anything to the screen and will save it into a file:
 
     python getUserReport.py STUDENT_EMAIL FILENAME.txt
+    
+The hidefree parameter is set to 1 by default (will hide all the free courses).
+Adding --hidefree=0 will display all paid and free courses.
 
+## Cache and rate limits
 To avoid reaching any rate limit, the script caches the courses' data into a file using Shelve.  
 The cache path can be changed modifying the variable CACHE_PATH, by default it creates a file called teachable_cache.out in the same folder
+
+The cache file expires in a week, but this time can be changed modifying the constant MAXIMUM_CACHE_DURATION.
