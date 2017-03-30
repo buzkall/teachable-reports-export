@@ -143,10 +143,11 @@ def get_latest_viewed_title():
 
         completed_lectures = course.get('completed_lecture_ids')
 
-        ## this function to order the completed_lectures looks clearer to me,
+        # this function to order the completed_lectures looks,
         # but will fail if one of the lectures gets deleted (and won't appear in ordered_id_list)
         #ordered_completed_lectures = sorted(completed_lectures, key=ordered_id_list.index)
-        ordered_completed_lectures = zip(*sorted(zip(ordered_id_list, completed_lectures)))[1]
+        ordered_completed_lectures = sorted(completed_lectures,
+                                            key=lambda k: (ordered_id_list.index(k) if k in ordered_id_list else -1))
 
         for section in sections:
             lecture_id = find(section.get('lectures'), 'id', ordered_completed_lectures[-1])
