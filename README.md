@@ -6,6 +6,8 @@ Teachable.com doesn't have an official API to export your students data.
 It has some webhooks to trigger events and use them with services like Zapier, but there is no fast and practical solution to see your students reports, especially if you need to check multiple students.
 The website is done using Angular, and needs some api urls to load the content, so I've created a script to collect all the data of all the courses a specific student is enrolled in to make things faster and less time consuming.
 
+![schema](http://i.imgur.com/WpLZ9ce.png)
+
 ### Config
 This script has been tested with python 2.7
 You should copy the file called secrets_example.py, rename it as secrets.py and set your username, password and yout teachable custom domain
