@@ -7,6 +7,7 @@ It has some webhooks to trigger events and use them with services like Zapier, b
 The website is done using Angular, and needs some api urls to load the content, so I've created a script to collect all the data of all the courses a specific student is enrolled in to make things faster and less time consuming.
 
 <center>
+
 ![schema](http://i.imgur.com/WpLZ9ce.png)
 </center>
 
