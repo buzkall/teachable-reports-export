@@ -54,7 +54,7 @@ if args.output_file:
     print 'Output will be saved to ' + output_file
 
 #user_mail = args.email[0]
-users_mails = string.split(args.email[0], ',')
+users_mails = string.split(args.emails[0], ',')
 
 
 def find(lst, key, value):
