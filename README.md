@@ -29,7 +29,7 @@ Typing --help will show the parameters info
     Get your student status in Teachable.
 
     positional arguments:
-        email                 email
+        emails                emails separated with commas
         output_file           Output file
 
     optional arguments:

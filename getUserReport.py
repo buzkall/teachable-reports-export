@@ -7,6 +7,8 @@ import shelve
 import os.path
 import time
 import argparse
+import string
+
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 SECRETS_PATH = dir_path + '/secrets.py'
@@ -36,7 +38,7 @@ user_name = ''
 
 parser = argparse.ArgumentParser(description='''Get your student status in Teachable. ''', epilog="""---""")
 parser.add_argument('--hidefree', type=int, default=1, help='0: show/1: hide free courses ')
-parser.add_argument('email', type=str, nargs=1, default='', help='email')
+parser.add_argument('emails', type=str, nargs=1, default='', help='emails separated by commas')
 parser.add_argument('output_file', nargs='?', default='', help='Output file')
 
 args = parser.parse_args()
@@ -51,7 +53,8 @@ if args.output_file:
     output_file = args.output_file
     print 'Output will be saved to ' + output_file
 
-user_mail = args.email[0]
+#user_mail = args.email[0]
+users_mails = string.split(args.email[0], ',')
 
 
 def find(lst, key, value):
@@ -87,19 +90,21 @@ def get_course_price():
 def get_user_report_card():
     global user_report_card, user_name
 
-    users = s.get(URL_FIND_USER + user_mail).json()
-    if users.get('error'):
-        print 'Check Teachable credentials'
-        sys.exit(1)
+    for user_mail in users_mails:
 
-    if not users.get('users'):
-        print 'There is no user with that email'
-        sys.exit(1)
-    else:
-        user_id = str(users.get('users')[0].get('id'))
-        user_name = users.get('users')[0].get('name').strip()
-        url_user_report_card = URL_REPORT_CARD.replace('USER_ID', user_id)
-        user_report_card = s.get(url_user_report_card).json()
+        users = s.get(URL_FIND_USER + user_mail).json()
+        if users.get('error'):
+            print 'Check Teachable credentials'
+            sys.exit(1)
+
+        if not users.get('users'):
+            print 'There is no user with that email'
+            sys.exit(1)
+        else:
+            user_id = str(users.get('users')[0].get('id'))
+            user_name = users.get('users')[0].get('name').strip()
+            url_user_report_card = URL_REPORT_CARD.replace('USER_ID', user_id)
+            user_report_card = s.get(url_user_report_card).json()
 
 
 def get_course_curriculum():
@@ -200,23 +205,25 @@ if output_file:
     f = open(output_file, 'a')
     sys.stdout = f
 
-print '###### Report of ' + user_name.encode('utf-8') + ' (' + user_mail.encode('utf-8') + ') #########'
 
-counter = 1
-for item in user_ordered_list:
-    if item.get('course_percentage') == 0:
-        print str(counter) + ' - Curso: ' + item.get('course_name').encode('utf-8') + ' - ' + str(
-            item.get('course_percentage')).encode('utf-8') + '%'
-    else:
-        print str(counter) + ' - Curso: ' + item.get('course_name').encode('utf-8') + ' - ' + str(
-            item.get('course_percentage')).encode('utf-8') + '%' + ' - ' + 'Sección: ' + item.get(
-            'course_current_section').encode('utf-8') + ' - ' + 'Lectura: ' + item.get('course_current_lecture').encode(
-            'utf-8')
-    counter += 1
+for user_mail in users_mails:
+    print '###### Report of ' + user_name.encode('utf-8') + ' (' + user_mail.encode('utf-8') + ') #########'
 
-print '###### end Report of ' + user_name.encode('utf-8') + ' (' + user_mail.encode('utf-8') + ') #########'
+    counter = 1
+    for item in user_ordered_list:
+        if item.get('course_percentage') == 0:
+            print str(counter) + ' - Curso: ' + item.get('course_name').encode('utf-8') + ' - ' + str(
+                item.get('course_percentage')).encode('utf-8') + '%'
+        else:
+            print str(counter) + ' - Curso: ' + item.get('course_name').encode('utf-8') + ' - ' + str(
+                item.get('course_percentage')).encode('utf-8') + '%' + ' - ' + 'Sección: ' + item.get(
+                'course_current_section').encode('utf-8') + ' - ' + 'Lectura: ' + item.get('course_current_lecture').encode(
+                'utf-8')
+        counter += 1
 
-if output_file:
-    print ' '
-    f.close()
-cached_data.close()
+    print '###### end Report of ' + user_name.encode('utf-8') + ' (' + user_mail.encode('utf-8') + ') #########'
+
+    if output_file:
+        print ' '
+        f.close()
+    cached_data.close()
