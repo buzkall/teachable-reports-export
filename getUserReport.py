@@ -7,8 +7,6 @@ import shelve
 import os.path
 import time
 import argparse
-import string
-
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 SECRETS_PATH = dir_path + '/secrets.py'
@@ -38,7 +36,7 @@ user_name = ''
 
 parser = argparse.ArgumentParser(description='''Get your student status in Teachable. ''', epilog="""---""")
 parser.add_argument('--hidefree', type=int, default=1, help='0: show/1: hide free courses ')
-parser.add_argument('emails', type=str, nargs=1, default='', help='emails separated by commas')
+parser.add_argument('email', type=str, nargs=1, default='', help='email')
 parser.add_argument('output_file', nargs='?', default='', help='Output file')
 
 args = parser.parse_args()
@@ -53,8 +51,7 @@ if args.output_file:
     output_file = args.output_file
     print 'Output will be saved to ' + output_file
 
-#user_mail = args.email[0]
-users_mails = string.split(args.emails[0], ',')
+user_mail = args.email[0]
 
 
 def find(lst, key, value):
@@ -81,7 +78,7 @@ def get_course_list():
         print 'Courses were not previously in cache'
 
 
-def get_course_price():
+def get_course_price(course_id):
     url_course_price = URL_COURSE_PRICE.replace('COURSE_ID', course_id)
     course = s.get(url_course_price).json()
     return course.get('products')[0].get('price')
@@ -90,24 +87,22 @@ def get_course_price():
 def get_user_report_card():
     global user_report_card, user_name
 
-    for user_mail in users_mails:
+    users = s.get(URL_FIND_USER + user_mail).json()
+    if users.get('error'):
+        print 'Check Teachable credentials'
+        sys.exit(1)
 
-        users = s.get(URL_FIND_USER + user_mail).json()
-        if users.get('error'):
-            print 'Check Teachable credentials'
-            sys.exit(1)
-
-        if not users.get('users'):
-            print 'There is no user with that email'
-            sys.exit(1)
-        else:
-            user_id = str(users.get('users')[0].get('id'))
-            user_name = users.get('users')[0].get('name').strip()
-            url_user_report_card = URL_REPORT_CARD.replace('USER_ID', user_id)
-            user_report_card = s.get(url_user_report_card).json()
+    if not users.get('users'):
+        print 'There is no user with that email'
+        sys.exit(1)
+    else:
+        user_id = str(users.get('users')[0].get('id'))
+        user_name = users.get('users')[0].get('name').strip()
+        url_user_report_card = URL_REPORT_CARD.replace('USER_ID', user_id)
+        user_report_card = s.get(url_user_report_card).json()
 
 
-def get_course_curriculum():
+def get_course_curriculum(course_id):
     global curriculum, course_curriculum
 
     url_course_curriculum = URL_CURRICULUM.replace('COURSE_ID', course_id)
@@ -134,7 +129,7 @@ def get_new_course_curriculum():
     cached_data['curriculum'] = curriculum
 
 
-def get_latest_viewed_title():
+def get_latest_viewed_title(course, course_id):
     global course_curriculum
     ordered_id_list = []
 
@@ -171,13 +166,48 @@ def expire_cache():
             print('Cache file dumped!')
 
 
-def generate_output():
-    get_course_curriculum()
+def generate_student_progress_list(course, course_id):
+    get_course_curriculum(course_id)
     course_data = find(course_list, 'id', int(course_id))
-    current_lecture_title, current_section_title = get_latest_viewed_title()
+    current_lecture_title, current_section_title = get_latest_viewed_title(course, course_id)
     output.append({'course_id': course_id, 'course_name': course_list[course_data].get('name'),
                    'course_percentage': course.get('percent_complete'), 'course_current_lecture': current_lecture_title,
                    'course_current_section': current_section_title})
+
+
+def generate_output():
+
+    get_user_report_card()
+    for key, course in user_report_card.iteritems():
+        course_id = str(course.get('course_id'))
+
+        if HIDE_FREE_COURSES:
+            if get_course_price(course_id) > 0:
+                generate_student_progress_list(course, course_id)
+        else:
+            generate_student_progress_list(course, course_id)
+
+    user_ordered_list = sorted(output, key=itemgetter('course_percentage'), reverse=True)
+    if output_file:
+        f = open(output_file, 'a')
+        sys.stdout = f
+    print '###### Report of ' + user_name.encode('utf-8') + ' (' + user_mail.encode('utf-8') + ') #########'
+    counter = 1
+    for item in user_ordered_list:
+        if item.get('course_percentage') == 0:
+            print str(counter) + ' - Curso: ' + item.get('course_name').encode('utf-8') + ' - ' + str(
+                item.get('course_percentage')).encode('utf-8') + '%'
+        else:
+            print str(counter) + ' - Curso: ' + item.get('course_name').encode('utf-8') + ' - ' + str(
+                item.get('course_percentage')).encode('utf-8') + '%' + ' - ' + 'Sección: ' + item.get(
+                'course_current_section').encode('utf-8') + ' - ' + 'Lectura: ' + item.get(
+                'course_current_lecture').encode(
+                'utf-8')
+        counter += 1
+    print '###### end Report of ' + user_name.encode('utf-8') + ' (' + user_mail.encode('utf-8') + ') #########'
+    if output_file:
+        print ' '
+        f.close()
 
 
 cached_data = shelve.open(CACHE_PATH)
@@ -188,42 +218,7 @@ s.auth = (username, password)
 s.headers.update({'x-test': 'true'})
 
 get_course_list()
-get_user_report_card()
 
-for key, course in user_report_card.iteritems():
-    course_id = str(course.get('course_id'))
+generate_output()
 
-    if HIDE_FREE_COURSES:
-        if get_course_price() > 0:
-            generate_output()
-    else:
-        generate_output()
-
-user_ordered_list = sorted(output, key=itemgetter('course_percentage'), reverse=True)
-
-if output_file:
-    f = open(output_file, 'a')
-    sys.stdout = f
-
-
-for user_mail in users_mails:
-    print '###### Report of ' + user_name.encode('utf-8') + ' (' + user_mail.encode('utf-8') + ') #########'
-
-    counter = 1
-    for item in user_ordered_list:
-        if item.get('course_percentage') == 0:
-            print str(counter) + ' - Curso: ' + item.get('course_name').encode('utf-8') + ' - ' + str(
-                item.get('course_percentage')).encode('utf-8') + '%'
-        else:
-            print str(counter) + ' - Curso: ' + item.get('course_name').encode('utf-8') + ' - ' + str(
-                item.get('course_percentage')).encode('utf-8') + '%' + ' - ' + 'Sección: ' + item.get(
-                'course_current_section').encode('utf-8') + ' - ' + 'Lectura: ' + item.get('course_current_lecture').encode(
-                'utf-8')
-        counter += 1
-
-    print '###### end Report of ' + user_name.encode('utf-8') + ' (' + user_mail.encode('utf-8') + ') #########'
-
-    if output_file:
-        print ' '
-        f.close()
-    cached_data.close()
+cached_data.close()
