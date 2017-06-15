@@ -35,7 +35,7 @@ output = []
 
 parser = argparse.ArgumentParser(description='''Get your student status in Teachable. ''', epilog="""---""")
 parser.add_argument('--hidefree', type=int, default=1, help='0: show/1: hide free courses ')
-parser.add_argument('emails', type=str, nargs=1, default='', help='list of emails (separated with commas)')
+parser.add_argument('emails', type=str, nargs=1, default='', help='list of emails (separated with commas and without spaces)')
 parser.add_argument('output_file', nargs='?', default='', help='Output file')
 
 args = parser.parse_args()
@@ -234,6 +234,7 @@ s.headers.update({'x-test': 'true'})
 get_course_list()
 
 for user_mail in users_mails:
+    user_mail = user_mail.strip() # ignore withspaces
     generate_output(user_mail)
 
 cached_data.close()
