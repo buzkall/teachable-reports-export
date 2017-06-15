@@ -125,14 +125,14 @@ def get_course_curriculum(course_id):
             course_curriculum = curriculum.get('course_id')
 
         else:
-            get_new_course_curriculum()
+            get_new_course_curriculum(course_id)
             print 'Curriculum of this course was not previously in cache'
     else:
-        get_new_course_curriculum()
+        get_new_course_curriculum(course_id)
         print 'Curriculum was not previously in cache'
 
 
-def get_new_course_curriculum():
+def get_new_course_curriculum(course_id):
     global curriculum, course_curriculum
 
     url_course_curriculum = URL_CURRICULUM.replace('COURSE_ID', course_id)
