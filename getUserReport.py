@@ -7,6 +7,7 @@ import shelve
 import os.path
 import time
 import argparse
+import string
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 SECRETS_PATH = dir_path + '/secrets.py'
@@ -34,7 +35,7 @@ output = []
 
 parser = argparse.ArgumentParser(description='''Get your student status in Teachable. ''', epilog="""---""")
 parser.add_argument('--hidefree', type=int, default=1, help='0: show/1: hide free courses ')
-parser.add_argument('email', type=str, nargs=1, default='', help='email')
+parser.add_argument('emails', type=str, nargs=1, default='', help='list of emails (separated with commas)')
 parser.add_argument('output_file', nargs='?', default='', help='Output file')
 
 args = parser.parse_args()
@@ -49,7 +50,8 @@ if args.output_file:
     output_file = args.output_file
     print 'Output will be saved to ' + output_file
 
-user_mail = args.email[0]
+#user_mail = args.email[0]
+users_mails = string.split(args.emails[0], ',')
 
 
 def find(lst, key, value):
@@ -231,6 +233,7 @@ s.headers.update({'x-test': 'true'})
 
 get_course_list()
 
-generate_output(user_mail)
+for user_mail in users_mails:
+    generate_output(user_mail)
 
 cached_data.close()
