@@ -28,11 +28,9 @@ MAXIMUM_CACHE_DURATION = 60 * 60 * 24 * 7  # One week
 #####
 
 course_list = {}
-user_report_card = {}
 curriculum = {}
 course_curriculum = {}
 output = []
-user_name = ''
 
 parser = argparse.ArgumentParser(description='''Get your student status in Teachable. ''', epilog="""---""")
 parser.add_argument('--hidefree', type=int, default=1, help='0: show/1: hide free courses ')
@@ -84,8 +82,21 @@ def get_course_price(course_id):
     return course.get('products')[0].get('price')
 
 
+def get_user_name(user_mail):
+
+    users = s.get(URL_FIND_USER + user_mail).json()
+    if users.get('error'):
+        print 'Check Teachable credentials'
+        sys.exit(1)
+
+    if not users.get('users'):
+        print 'There is no user with that email'
+        sys.exit(1)
+    else:
+        return users.get('users')[0].get('name').strip()
+
+
 def get_user_report_card():
-    global user_report_card, user_name
 
     users = s.get(URL_FIND_USER + user_mail).json()
     if users.get('error'):
@@ -97,9 +108,8 @@ def get_user_report_card():
         sys.exit(1)
     else:
         user_id = str(users.get('users')[0].get('id'))
-        user_name = users.get('users')[0].get('name').strip()
         url_user_report_card = URL_REPORT_CARD.replace('USER_ID', user_id)
-        user_report_card = s.get(url_user_report_card).json()
+        return s.get(url_user_report_card).json()
 
 
 def get_course_curriculum(course_id):
@@ -175,9 +185,11 @@ def generate_student_progress_list(course, course_id):
                    'course_current_section': current_section_title})
 
 
-def generate_output():
+def generate_output(users_mail):
 
-    get_user_report_card()
+    user_name = get_user_name(users_mail)
+    user_report_card = get_user_report_card()
+
     for key, course in user_report_card.iteritems():
         course_id = str(course.get('course_id'))
 
@@ -219,6 +231,6 @@ s.headers.update({'x-test': 'true'})
 
 get_course_list()
 
-generate_output()
+generate_output(user_mail)
 
 cached_data.close()
