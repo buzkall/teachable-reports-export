@@ -31,7 +31,6 @@ MAXIMUM_CACHE_DURATION = 60 * 60 * 24 * 7  # One week
 course_list = {}
 curriculum = {}
 course_curriculum = {}
-output = []
 
 parser = argparse.ArgumentParser(description='''Get your student status in Teachable. ''', epilog="""---""")
 parser.add_argument('--hidefree', type=int, default=1, help='0: show/1: hide free courses ')
@@ -178,7 +177,7 @@ def expire_cache():
             print('Cache file dumped!')
 
 
-def generate_student_progress_list(course, course_id):
+def generate_student_progress_list(course, course_id, output):
     get_course_curriculum(course_id)
     course_data = find(course_list, 'id', int(course_id))
     current_lecture_title, current_section_title = get_latest_viewed_title(course, course_id)
@@ -188,6 +187,7 @@ def generate_student_progress_list(course, course_id):
 
 
 def generate_output(users_mail):
+    output = []
 
     user_name = get_user_name(users_mail)
     user_report_card = get_user_report_card()
@@ -197,9 +197,9 @@ def generate_output(users_mail):
 
         if HIDE_FREE_COURSES:
             if get_course_price(course_id) > 0:
-                generate_student_progress_list(course, course_id)
+                generate_student_progress_list(course, course_id, output)
         else:
-            generate_student_progress_list(course, course_id)
+            generate_student_progress_list(course, course_id, output)
 
     user_ordered_list = sorted(output, key=itemgetter('course_percentage'), reverse=True)
     if output_file:
