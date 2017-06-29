@@ -12,6 +12,11 @@ The website is done using Angular, and needs some api urls to load the content, 
 
 ## Config
 This script has been tested with python 2.7
+
+It requires the module "request" which can be installed using:
+
+    pip install requests
+
 You should copy the file called secrets_example.py, rename it as secrets.py and set your username, password and yout teachable custom domain
 
     username='YOUR_TEACHABLE_USERNAME'
