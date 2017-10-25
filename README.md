@@ -6,23 +6,39 @@ Teachable.com doesn't have an official API to export your students data.
 It has some webhooks to trigger events and use them with services like Zapier, but there is no fast and practical solution to see your students reports, especially if you need to check multiple students.
 The website is done using Angular, and needs some api urls to load the content, so I've created a script to collect all the data of all the courses a specific student is enrolled in to make things faster and less time consuming.
 
+ 
 <p align="center">
-    <img src="http://i.imgur.com/WpLZ9ce.png" alt="teachable_schema">
+    <img src="https://i.imgur.com/GFUNA3D.png" alt="teachable_schema">
 </p>
 
-## Config
+## Install and Config
 This script has been tested with python 2.7
 
 It requires the module "request" which can be installed using:
 
     pip install requests
+    
+If you don't have pip installed you can do it with
 
-You should copy the file called secrets_example.py, rename it as secrets.py and set your username, password and yout teachable custom domain
+    sudo easy_install pip
+    
+if pip install requests shows an error about urllib3 you can install it with
+
+    sudo easy_install requests
+
+After that you should copy the file called secrets_example.py, rename it as secrets.py and set your username, password and yout teachable custom domain
 
     username='YOUR_TEACHABLE_USERNAME'
     password='YOUR_TEACHABLE_PASSWORD'
-    site_url='http://YOUR_TEACHABLE_URL'
+    site_url='https://YOUR_TEACHABLE_URL'
 
+It's important to set the site_url with https if your site uses https, otherwise when you run the script, you will get an error like this
+
+    raise SSLError(e, request=request) requests.exceptions.SSLError: 
+    HTTPSConnectionPool(host='xxxx', port=443): 
+    Max retries exceeded with url: xxxxx 
+    (Caused by SSLError(SSLError(1, u'[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] 
+    sslv3 alert handshake failure (_ssl.c:590)'),)) 
 
 ## Usage
 
@@ -55,6 +71,10 @@ It will output something like this
     COURSE2 NAME - 62% - CURRENT SECTION OF THE COURSE
     COURSE3 NAME - 0% -
     ###### end Report of STUDENT NAME (STUDENT EMAIL) #########
+
+You can pass the array several emails separated with commas
+
+    python getUserReport.py STUDENT_EMAIL1,STUDENT_EMAIL2
 
 Specifying the output file won't output anything to the screen and will save it into a file:
 
