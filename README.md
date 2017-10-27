@@ -22,9 +22,6 @@ If you don't have pip installed you can do it with
 
     sudo easy_install pip
     
-if pip install requests shows an error about urllib3 you can install it with
-
-    sudo easy_install requests
 
 After that you should copy the file called secrets_example.py, rename it as secrets.py and set your username, password and yout teachable custom domain
 
@@ -32,13 +29,17 @@ After that you should copy the file called secrets_example.py, rename it as secr
     password='YOUR_TEACHABLE_PASSWORD'
     site_url='https://YOUR_TEACHABLE_URL'
 
-It's important to set the site_url with https if your site uses https, otherwise when you run the script, you will get an error like this
+The first time you run the script, this error could happen.
 
     raise SSLError(e, request=request) requests.exceptions.SSLError: 
     HTTPSConnectionPool(host='xxxx', port=443): 
     Max retries exceeded with url: xxxxx 
     (Caused by SSLError(SSLError(1, u'[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] 
     sslv3 alert handshake failure (_ssl.c:590)'),)) 
+
+You should install python with brew with this command in order to solve all the openssl nonsense.
+
+    brew install python --with-brewed-openssl
 
 ## Usage
 
