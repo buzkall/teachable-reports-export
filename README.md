@@ -40,6 +40,11 @@ The first time you run the script, this error could happen.
 You should install python with brew with this command in order to solve all the openssl nonsense.
 
     brew install python --with-brewed-openssl
+    
+After installing it you should probably force the brew link, but in case it doesn't solve the problem
+the "brew info python" suggest you add the url to your path
+
+    export PATH="/usr/local/opt/python/libexec/bin:$PATH"
 
 ## Usage
 
