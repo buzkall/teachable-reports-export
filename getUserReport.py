@@ -23,7 +23,6 @@ URL_FIND_USER = site_url + '/api/v1/users?name_or_email_cont='
 URL_REPORT_CARD = site_url + '/api/v1/users/USER_ID/report_card'
 URL_CURRICULUM = site_url + '/api/v1/courses/COURSE_ID/curriculum'
 URL_COURSE_PRICE = site_url + '/api/v1/courses/COURSE_ID/products'
-# CACHE_PATH = '/tmp/teachable_cache.out'
 CACHE_PATH = dir_path + '/teachable_cache.out'
 MAXIMUM_CACHE_DURATION = 60 * 60 * 24 * 7  # One week
 #####
@@ -39,8 +38,6 @@ parser.add_argument('output_file', nargs='?', default='', help='Output file')
 
 args = parser.parse_args()
 
-#print args
-
 HIDE_FREE_COURSES = args.hidefree  # set to 0 to show all
 
 # process position variables
@@ -49,7 +46,6 @@ if args.output_file:
     output_file = args.output_file
     print 'Output will be saved to ' + output_file
 
-#user_mail = args.email[0]
 users_mails = string.split(args.emails[0], ',')
 
 
@@ -234,7 +230,8 @@ s.headers.update({'x-test': 'true'})
 get_course_list()
 
 for user_mail in users_mails:
-    user_mail = user_mail.strip() # ignore withspaces
+    # ignore white spaces
+    user_mail = user_mail.strip()
     generate_output(user_mail)
 
 cached_data.close()
