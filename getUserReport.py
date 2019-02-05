@@ -76,6 +76,10 @@ def get_course_list():
 def get_course_price(course_id):
     url_course_price = URL_COURSE_PRICE.replace('COURSE_ID', course_id)
     course = s.get(url_course_price).json()
+    try:
+        course.get('products')[0].get('price')
+    except IndexError:
+        return 0
     return course.get('products')[0].get('price')
 
 
