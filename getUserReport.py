@@ -21,6 +21,7 @@ else:
 URL_COURSES = site_url + '/api/v1/courses'
 URL_FIND_USER = site_url + '/api/v1/users?name_or_email_cont='
 URL_REPORT_CARD = site_url + '/api/v1/users/USER_ID/report_card'
+URL_COURSE_REPORT = site_url + '/api/v1/users/USER_ID/course_report'
 URL_CURRICULUM = site_url + '/api/v1/courses/COURSE_ID/curriculum'
 URL_COURSE_PRICE = site_url + '/api/v1/courses/COURSE_ID/products'
 CACHE_PATH = dir_path + '/teachable_cache.out'
@@ -33,7 +34,8 @@ course_curriculum = {}
 
 parser = argparse.ArgumentParser(description='''Get your student status in Teachable. ''', epilog="""---""")
 parser.add_argument('--hidefree', type=int, default=1, help='0: show/1: hide free courses ')
-parser.add_argument('emails', type=str, nargs=1, default='', help='list of emails (separated with commas and without spaces)')
+parser.add_argument('emails', type=str, nargs=1, default='',
+                    help='list of emails (separated with commas and without spaces)')
 parser.add_argument('output_file', nargs='?', default='', help='Output file')
 
 args = parser.parse_args()
@@ -84,7 +86,6 @@ def get_course_price(course_id):
 
 
 def get_user_name(user_mail):
-
     users = s.get(URL_FIND_USER + user_mail).json()
     if users.get('error'):
         print 'Check Teachable credentials'
@@ -97,8 +98,20 @@ def get_user_name(user_mail):
         return users.get('users')[0].get('name').strip()
 
 
-def get_user_report_card():
+def get_user_id(user_mail):
+    users = s.get(URL_FIND_USER + user_mail).json()
+    if users.get('error'):
+        print 'Check Teachable credentials'
+        sys.exit(1)
 
+    if not users.get('users'):
+        print 'There is no user with that email'
+        sys.exit(1)
+    else:
+        return str(users.get('users')[0].get('id'))
+
+
+def get_user_report_card():
     users = s.get(URL_FIND_USER + user_mail).json()
     if users.get('error'):
         print 'Check Teachable credentials'
@@ -111,6 +124,22 @@ def get_user_report_card():
         user_id = str(users.get('users')[0].get('id'))
         url_user_report_card = URL_REPORT_CARD.replace('USER_ID', user_id)
         return s.get(url_user_report_card).json()
+
+
+def get_course_quiz(user_id, course_id):
+    course_quiz = ''
+    url_courses_report = URL_COURSE_REPORT.replace('USER_ID', user_id)
+    courses_report = s.get(url_courses_report).json()
+
+    try:
+        for lecture in courses_report['report']['lecture_progresses']:
+            if lecture['course_id'] == int(course_id):
+                for quiz in courses_report['report']['quiz_responses']['responses']:
+                    if quiz['custom_form']['topic']['attachable_id'] == lecture['lecture_id']:
+                        course_quiz = str(quiz['grade']['correct']) + '/' + str(quiz['grade']['total'])
+    except IndexError:
+        print 'error in quiz'
+    return course_quiz
 
 
 def get_course_curriculum(course_id):
@@ -156,7 +185,7 @@ def get_latest_viewed_title(course, course_id):
 
         # this function to order the completed_lectures looks,
         # but will fail if one of the lectures gets deleted (and won't appear in ordered_id_list)
-        #ordered_completed_lectures = sorted(completed_lectures, key=ordered_id_list.index)
+        # ordered_completed_lectures = sorted(completed_lectures, key=ordered_id_list.index)
         ordered_completed_lectures = sorted(completed_lectures,
                                             key=lambda k: (ordered_id_list.index(k) if k in ordered_id_list else -1))
 
@@ -177,19 +206,24 @@ def expire_cache():
             print('Cache file dumped!')
 
 
-def generate_student_progress_list(course, course_id, output):
+def generate_student_progress_list(user_id, course, course_id, output):
     get_course_curriculum(course_id)
-    course_data = find(course_list, 'id', int(course_id))
-    current_lecture_title, current_section_title = get_latest_viewed_title(course, course_id)
-    output.append({'course_id': course_id, 'course_name': course_list[course_data].get('name'),
-                   'course_percentage': course.get('percent_complete'), 'course_current_lecture': current_lecture_title,
-                   'course_current_section': current_section_title})
+    if course_id != 'None':
+        course_data = find(course_list, 'id', int(course_id))
+        current_lecture_title, current_section_title = get_latest_viewed_title(course, course_id)
+        course_quiz = get_course_quiz(user_id, course_id)
+        output.append({'course_id': course_id, 'course_name': course_list[course_data].get('name'),
+                       'course_percentage': course.get('percent_complete'),
+                       'course_current_lecture': current_lecture_title,
+                       'course_current_section': current_section_title,
+                       'course_quiz': course_quiz})
 
 
 def generate_output(users_mail):
     output = []
 
     user_name = get_user_name(users_mail)
+    user_id = get_user_id(users_mail)
     user_report_card = get_user_report_card()
 
     for key, course in user_report_card.iteritems():
@@ -197,9 +231,9 @@ def generate_output(users_mail):
 
         if HIDE_FREE_COURSES:
             if get_course_price(course_id) > 0:
-                generate_student_progress_list(course, course_id, output)
+                generate_student_progress_list(user_id, course, course_id, output)
         else:
-            generate_student_progress_list(course, course_id, output)
+            generate_student_progress_list(user_id, course, course_id, output)
 
     user_ordered_list = sorted(output, key=itemgetter('course_percentage'), reverse=True)
     if output_file:
@@ -212,13 +246,14 @@ def generate_output(users_mail):
             print str(counter) + ' - Curso: ' + item.get('course_name').encode('utf-8') + ' - ' + str(
                 item.get('course_percentage')).encode('utf-8') + '%'
         else:
-            print str(counter) + ' - Curso: ' + item.get('course_name').encode('utf-8') + ' - ' + str(
-                item.get('course_percentage')).encode('utf-8') + '%' + ' - ' + 'Sección: ' + item.get(
-                'course_current_section').encode('utf-8') + ' - ' + 'Lectura: ' + item.get(
-                'course_current_lecture').encode(
-                'utf-8')
+            print str(counter) + ' - Curso: ' + item.get('course_name').encode('utf-8') + ' - ' + \
+                  str(item.get('course_percentage')).encode('utf-8') + '%' + ' - ' + 'Sección: ' + \
+                  item.get('course_current_section').encode('utf-8') + ' - ' + 'Lectura: ' + \
+                  item.get('course_current_lecture').encode('utf-8')
+            if item.get('course_quiz'):
+                print ' -- Quiz result: ' + item.get('course_quiz')
         counter += 1
-    print '###### end Report of ' + user_name.encode('utf-8') + ' (' + user_mail.encode('utf-8') + ') #########'
+    print '###### End Report of ' + user_name.encode('utf-8') + ' (' + user_mail.encode('utf-8') + ') #########'
     if output_file:
         print ' '
         f.close()
